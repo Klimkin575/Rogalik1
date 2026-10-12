@@ -7,6 +7,7 @@ public class EnemyHealth : MonoBehaviour
     public float destroyTime;
     public EnemyMover enemyMover;
     public EnemyFlyMover flyMover;
+    public EnemyRandom room;
 
     public void TakeDamage(int damage)
     {
@@ -14,7 +15,7 @@ public class EnemyHealth : MonoBehaviour
 
         if (health == 0)
         {
-            EnemyRandom.deadEnemy ++;
+            room.EnemyDied();
             if (enemyMover != null)
                 enemyMover.speed = 0;
             if (flyMover != null)

@@ -3,76 +3,55 @@ using UnityEngine;
 public class EnemyRandom : MonoBehaviour
 {
     public GameObject[] enemy;
-    public GameObject[] gates;
     public Transform[] spawnPoints;
-    public bool bossRoom = false;
+    public bool bossRoom;
     public GameObject boss;
-    public Transform targetPlayer;
     public SpriteRenderer sprite;
-    public static int deadEnemy;
+    public Room room;
+    public int deadEnemy;
+    public int enemyCount;
 
-    private int randomPoint;
-    private int randomEnemy;
-    private int randomCount;
-
-    void Start()
+    public void StartRoom(Transform player)
     {
-        randomCount = Random.Range(2, 5);
-        if (bossRoom)
+        room.transitionTrigger.trigger.enabled = false;
+        enemyCount = bossRoom ? 1 : Random.Range(2, 5);
+
+        for (int i = 0; i < enemyCount; i++)
         {
-            int randomPoint = Random.Range(0, spawnPoints.Length);
-            GameObject enemyObject = Instantiate(boss, spawnPoints[randomPoint].position, Quaternion.identity);
+            GameObject enemyObject = Instantiate(
+                bossRoom ? boss : enemy[Random.Range(0, enemy.Length)],
+                spawnPoints[Random.Range(0, spawnPoints.Length)].position,
+                Quaternion.identity
+            );
+
+            enemyObject.GetComponent<EnemyHealth>().room = this;
+
             if (enemyObject.TryGetComponent(out EnemyMover mover))
-            {
-                mover.SetTarget(targetPlayer);
-            }
+                mover.SetTarget(player);
+
             if (enemyObject.TryGetComponent(out EnemyAnim anim))
-            {
-                anim.SetTarget(targetPlayer);
-            }
-            return;
-        }
+                anim.SetTarget(player);
 
-        for (int i = 0; i < randomCount; i++)
-        {
-            for (int counter = 0; counter < 5; counter++)
-            {
-                randomPoint = Random.Range(0, 5);
-                randomEnemy = Random.Range(0, enemy.Length);
+            if (enemyObject.TryGetComponent(out EnemyFlyMover flyMover))
+                flyMover.SetTarget(sprite, player);
 
-                if (randomPoint == counter)
-                {
-                    GameObject enemyObject = Instantiate(enemy[randomEnemy], spawnPoints[randomPoint].position, Quaternion.identity);
-
-                    if (enemyObject.TryGetComponent(out EnemyMover mover))
-                    {
-                        mover.SetTarget(targetPlayer);
-                    }
-                    if (enemyObject.TryGetComponent(out EnemyAnim anim))
-                    {
-                        anim.SetTarget(targetPlayer);
-                    }
-                    if (enemyObject.TryGetComponent(out EnemyFlyMover flyMover))
-                    {
-                        flyMover.SetTarget(sprite);
-                    }
-                    if (enemyObject.TryGetComponent(out FlyAnim flyAnim))
-                    {
-                        flyAnim.SetTarget(targetPlayer);
-                    }
-                }
-            }
-
+            if (enemyObject.TryGetComponent(out FlyAnim flyAnim))
+                flyAnim.SetTarget(player);
         }
     }
 
-    private void Update()
+    public void EnemyDied()
     {
-        if (deadEnemy == randomCount)
+        deadEnemy++;
+
+        if (deadEnemy == enemyCount)
         {
-            for (int i = 0; i < gates.Length; i++)
+            if (room.frontDoor.connectDoor == null)
+                Debug.Log("win");
+            else
             {
-                gates[i].SetActive(false);
+                room.frontDoor.gameObject.SetActive(false);
+                room.transitionTrigger.trigger.enabled = true;
             }
         }
     }
